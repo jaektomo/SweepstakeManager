@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, KeyboardEvent, ChangeEvent, useRef } from 'react';
+import React, { useState, KeyboardEvent, ChangeEvent, useRef, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -41,6 +41,16 @@ const SweepstakeManager: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const participantInputRef = useRef<HTMLInputElement>(null);
   
+  // Keep activeSweepstake in sync with sweepstakes array
+  useEffect(() => {
+    if (activeSweepstake) {
+      const updatedSweepstake = sweepstakes.find(s => s.id === activeSweepstake.id);
+      if (updatedSweepstake) {
+        setActiveSweepstake(updatedSweepstake);
+      }
+    }
+  }, [sweepstakes]);
+
   // New sweepstake form state
   const [newSweepstake, setNewSweepstake] = useState<Omit<Sweepstake, 'id' | 'status' | 'participants' | 'assignments' | 'winners' | 'createdAt'>>({
     name: '',
