@@ -1,9 +1,9 @@
 "use client";
 
 import React, { useState, KeyboardEvent, ChangeEvent, useRef, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { Button } from './ui/button';
+import { Input } from './ui/input';
 import { Plus, ShuffleIcon, Trophy, ChevronLeft, Search, UserPlus } from 'lucide-react';
 
 interface PrizeDistribution {
@@ -21,27 +21,34 @@ interface Winner extends Assignment {
   winnings: number;
 }
 
+interface Participant {
+  name: string;
+  hasPaid: boolean;
+}
+
 interface Sweepstake {
   id: string;
   name: string;
   buyIn: number;
   prizeDistribution: PrizeDistribution[];
   status: 'setup' | 'active' | 'completed';
-  participants: string[];
+  participants: Participant[];
   assignments: Assignment[];
   winners: Winner[];
   createdAt: string;
+  horses: string[];
 }
 
 const SweepstakeManager: React.FC = () => {
   // Main application state
-  const [view, setView] = useState<'list' | 'create' | 'detail'>('list');
+  const [view, setView] = useState<'list' | 'create' | 'detail' | 'horses'>('list');
   const [sweepstakes, setSweepstakes] = useState<Sweepstake[]>([]);
   const [activeSweepstake, setActiveSweepstake] = useState<Sweepstake | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [newHorse, setNewHorse] = useState('');
+  const [horses, setHorses] = useState<string[]>([]);
   const participantInputRef = useRef<HTMLInputElement>(null);
   
-  // Keep activeSweepstake in sync with sweepstakes array
   useEffect(() => {
     if (activeSweepstake) {
       const updatedSweepstake = sweepstakes.find(s => s.id === activeSweepstake.id);
@@ -52,18 +59,11 @@ const SweepstakeManager: React.FC = () => {
   }, [sweepstakes]);
 
   // New sweepstake form state
-  const [newSweepstake, setNewSweepstake] = useState<Omit<Sweepstake, 'id' | 'status' | 'participants' | 'assignments' | 'winners' | 'createdAt'>>({
+  const [newSweepstake, setNewSweepstake] = useState<Omit<Sweepstake, 'id' | 'status' | 'participants' | 'assignments' | 'winners' | 'createdAt' | 'horses'>>({
     name: '',
     buyIn: 0,
     prizeDistribution: [{ place: 1, percentage: 60 }]
   });
-
-  // Sample horses
-  const sampleHorses = [
-    "Gold Trip", "Deauville Legend", "Montefilia", "Breakup", 
-    "Vow And Declare", "Without A Fight", "Soulcombe", "Right You Are",
-    "Cleveland", "Ashrun", "Future History", "More Felons"
-  ];
 
   // Create new sweepstake
   const createSweepstake = () => {
@@ -77,7 +77,8 @@ const SweepstakeManager: React.FC = () => {
       participants: [],
       assignments: [],
       winners: [],
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
+      horses: [...horses]
     };
     setSweepstakes([...sweepstakes, newSweepstakeEntry]);
     setView('list');
@@ -92,11 +93,36 @@ const SweepstakeManager: React.FC = () => {
     });
   };
 
+  // Horse management
+  const addHorse = () => {
+    if (newHorse.trim()) {
+      setHorses([...horses, newHorse.trim()]);
+      setNewHorse('');
+    }
+  };
+
+  const removeHorse = (index: number) => {
+    setHorses(horses.filter((_, i) => i !== index));
+  };
+
   // Participant management
   const addParticipant = (sweepstakeId: string, name: string) => {
     setSweepstakes(sweepstakes.map(sweep => 
       sweep.id === sweepstakeId
-        ? { ...sweep, participants: [...sweep.participants, name] }
+        ? { ...sweep, participants: [...sweep.participants, { name, hasPaid: false }] }
+        : sweep
+    ));
+  };
+
+  const toggleParticipantPayment = (sweepstakeId: string, participantIndex: number) => {
+    setSweepstakes(sweepstakes.map(sweep => 
+      sweep.id === sweepstakeId
+        ? {
+            ...sweep,
+            participants: sweep.participants.map((p, i) => 
+              i === participantIndex ? { ...p, hasPaid: !p.hasPaid } : p
+            )
+          }
         : sweep
     ));
   };
@@ -112,14 +138,14 @@ const SweepstakeManager: React.FC = () => {
   // Horse assignment
   const assignHorses = (sweepstakeId: string) => {
     const sweep = sweepstakes.find(s => s.id === sweepstakeId);
-    if (!sweep) return;
+    if (!sweep || sweep.horses.length < sweep.participants.length) return;
 
-    const shuffledHorses = [...sampleHorses]
+    const shuffledHorses = [...sweep.horses]
       .sort(() => Math.random() - 0.5)
       .slice(0, sweep.participants.length);
     
     const assignments = sweep.participants.map((participant, index) => ({
-      participant,
+      participant: participant.name,
       horse: shuffledHorses[index]
     }));
 
@@ -159,6 +185,43 @@ const SweepstakeManager: React.FC = () => {
       sweep.status.toLowerCase().includes(searchQuery.toLowerCase())
     )
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+  const renderHorseManagement = () => (
+    <div className="space-y-6">
+      <div className="flex items-center">
+        <Button variant="ghost" onClick={() => setView('list')}>
+          <ChevronLeft className="mr-2 h-4 w-4" />
+          Back to List
+        </Button>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Horse Management</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex gap-2">
+            <Input
+              value={newHorse}
+              onChange={(e) => setNewHorse(e.target.value)}
+              placeholder="Enter horse name..."
+              onKeyPress={(e) => e.key === 'Enter' && addHorse()}
+            />
+            <Button onClick={addHorse}>Add Horse</Button>
+          </div>
+
+          <div className="grid gap-2">
+            {horses.map((horse, index) => (
+              <div key={index} className="flex justify-between items-center p-2 bg-gray-50 rounded">
+                <span>{horse}</span>
+                <Button variant="ghost" onClick={() => removeHorse(index)}>Remove</Button>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
 
   const renderCreateForm = () => (
     <div className="space-y-6">
@@ -256,7 +319,7 @@ const SweepstakeManager: React.FC = () => {
           <div className="pt-4">
             <Button
               onClick={createSweepstake}
-              disabled={!newSweepstake.name || newSweepstake.buyIn <= 0}
+              disabled={!newSweepstake.name || newSweepstake.buyIn <= 0 || horses.length === 0}
             >
               Create Sweepstake
             </Button>
@@ -270,9 +333,14 @@ const SweepstakeManager: React.FC = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Melbourne Cup Sweepstakes</h1>
-        <Button onClick={() => setView('create')}>
-          <Plus className="mr-2" /> New Sweepstake
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={() => setView('horses')} variant="outline">
+            Manage Horses
+          </Button>
+          <Button onClick={() => setView('create')}>
+            <Plus className="mr-2" /> New Sweepstake
+          </Button>
+        </div>
       </div>
 
       <div className="relative">
@@ -385,7 +453,7 @@ const SweepstakeManager: React.FC = () => {
                   </div>
                   <Button 
                     onClick={() => assignHorses(activeSweepstake.id)}
-                    disabled={activeSweepstake.participants.length === 0}
+                    disabled={activeSweepstake.participants.length === 0 || activeSweepstake.participants.length > activeSweepstake.horses.length}
                   >
                     <ShuffleIcon className="mr-2 h-4 w-4" />
                     Assign Horses
@@ -394,7 +462,18 @@ const SweepstakeManager: React.FC = () => {
                 <div className="grid gap-2">
                   {activeSweepstake.participants.map((participant, index) => (
                     <div key={index} className="flex justify-between items-center p-2 bg-gray-50 rounded">
-                      <span>{participant}</span>
+                      <div className="flex items-center gap-3">
+                        <input
+                          type="checkbox"
+                          checked={participant.hasPaid}
+                          onChange={() => toggleParticipantPayment(activeSweepstake.id, index)}
+                          className="h-4 w-4"
+                        />
+                        <span>{participant.name}</span>
+                      </div>
+                      <span className={participant.hasPaid ? "text-green-600" : "text-red-600"}>
+                        {participant.hasPaid ? "Paid" : "Unpaid"}
+                      </span>
                     </div>
                   ))}
                 </div>
@@ -449,6 +528,7 @@ const SweepstakeManager: React.FC = () => {
       {view === 'list' && renderDashboard()}
       {view === 'create' && renderCreateForm()}
       {view === 'detail' && renderSweepstakeDetail()}
+      {view === 'horses' && renderHorseManagement()}
     </div>
   );
 };
