@@ -118,7 +118,7 @@ const SweepstakeManager: React.FC = () => {
   // Create new sweepstake
   const createSweepstake = () => {
     if (!newSweepstake.name || newSweepstake.buyIn <= 0) return;
-    
+
     const id = Date.now().toString();
     const newSweepstakeEntry: Sweepstake = {
       id,
@@ -273,8 +273,8 @@ const SweepstakeManager: React.FC = () => {
               </div>
             ))}
           </div>
-        </CardContent>
-      </Card>
+            </CardContent>
+          </Card>
     </div>
   );
 
@@ -296,7 +296,7 @@ const SweepstakeManager: React.FC = () => {
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Sweepstake Name
             </label>
-          <Input
+            <Input
               placeholder="Enter sweepstake name"
               value={newSweepstake.name}
               onChange={(e: ChangeEvent<HTMLInputElement>) => 
@@ -414,7 +414,7 @@ const SweepstakeManager: React.FC = () => {
       <div className="grid gap-4">
         {filteredSweepstakes.map(sweep => (
           <Card key={sweep.id} className="hover:shadow-md transition-shadow">
-            <CardContent className="p-4">
+                <CardContent className="p-4">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
                   <h3 className="font-semibold text-lg">{sweep.name}</h3>
@@ -425,7 +425,7 @@ const SweepstakeManager: React.FC = () => {
                     <span>•</span>
                     <span className="capitalize">{sweep.status}</span>
                   </div>
-                </div>
+                    </div>
                 <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
                   {sweep.status === 'active' && (
                     <Button 
@@ -448,11 +448,11 @@ const SweepstakeManager: React.FC = () => {
                   </Button>
                 </div>
               </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-    </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
   );
 
   const renderSweepstakeDetail = () => {
