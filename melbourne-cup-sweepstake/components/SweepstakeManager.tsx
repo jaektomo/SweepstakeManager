@@ -49,7 +49,7 @@ const shuffleArray = <T,>(array: T[]): T[] => {
   return shuffled;
 };
 
-const saveToLocalStorage = (key: string, data: any) => {
+const saveToLocalStorage = (key: string, data: unknown) => {
   if (typeof window !== 'undefined') {
     try {
       localStorage.setItem(key, JSON.stringify(data));
@@ -101,7 +101,7 @@ const SweepstakeManager: React.FC = () => {
         setActiveSweepstake(updatedActiveSweepstake);
       }
     }
-  }, [sweepstakes]);
+  }, [sweepstakes, activeSweepstake]);
 
   // Save horses to localStorage when they change
   useEffect(() => {
