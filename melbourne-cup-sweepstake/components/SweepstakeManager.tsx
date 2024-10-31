@@ -131,7 +131,7 @@ const SweepstakeManager: React.FC = () => {
       horses: [...horses]
     };
     const updatedSweepstakes = [...sweepstakes, newSweepstakeEntry];
-    setSweepstakes(updatedSweepstakes);
+      setSweepstakes(updatedSweepstakes);
     setView('list');
     resetNewSweepstakeForm();
   };
@@ -305,19 +305,21 @@ const SweepstakeManager: React.FC = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Buy-in Amount ($)
-            </label>
-            <Input
-              type="number"
-              min="1"
-              step="0.01"
-              placeholder="Enter buy-in amount"
-              value={newSweepstake.buyIn}
-              onChange={(e: ChangeEvent<HTMLInputElement>) => 
-                setNewSweepstake({ ...newSweepstake, buyIn: parseFloat(e.target.value) || 0 })}
-            />
-          </div>
+  <label className="block text-sm font-medium text-gray-700 mb-1">
+    Buy-in Amount ($)
+  </label>
+  <Input
+    type="number"
+    min="2"
+    step="1.00"
+    placeholder="Enter buy-in amount"
+    value={newSweepstake.buyIn}
+    onChange={(e: ChangeEvent<HTMLInputElement>) => 
+      setNewSweepstake({ ...newSweepstake, buyIn: parseFloat(e.target.value) || 0 })}
+    className="[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-auto [&::-webkit-inner-spin-button]:appearance-auto"
+  />
+</div>
+
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
