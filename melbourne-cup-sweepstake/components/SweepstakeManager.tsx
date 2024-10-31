@@ -49,6 +49,29 @@ const shuffleArray = <T,>(array: T[]): T[] => {
   return shuffled;
 };
 
+const saveToLocalStorage = (key: string, data: any) => {
+  if (typeof window !== 'undefined') {
+    try {
+      localStorage.setItem(key, JSON.stringify(data));
+    } catch (error) {
+      console.error('Error saving to localStorage:', error);
+    }
+  }
+};
+
+const loadFromLocalStorage = (key: string) => {
+  if (typeof window !== 'undefined') {
+    try {
+      const data = localStorage.getItem(key);
+      return data ? JSON.parse(data) : null;
+    } catch (error) {
+      console.error('Error loading from localStorage:', error);
+      return null;
+    }
+  }
+  return null;
+};
+
 const SweepstakeManager: React.FC = () => {
   // Main application state
   const [view, setView] = useState<'list' | 'create' | 'detail' | 'horses'>('list');
@@ -59,14 +82,31 @@ const SweepstakeManager: React.FC = () => {
   const [horses, setHorses] = useState<string[]>([]);
   const participantInputRef = useRef<HTMLInputElement>(null);
   
+  // Load initial data from localStorage only on client-side
   useEffect(() => {
+    const savedSweepstakes = loadFromLocalStorage('sweepstakes');
+    const savedHorses = loadFromLocalStorage('horses');
+    if (savedSweepstakes) setSweepstakes(savedSweepstakes);
+    if (savedHorses) setHorses(savedHorses);
+  }, []);
+
+  // Save sweepstakes to localStorage when they change
+  useEffect(() => {
+    saveToLocalStorage('sweepstakes', sweepstakes);
+    
+    // Update activeSweepstake when sweepstakes change
     if (activeSweepstake) {
-      const updatedSweepstake = sweepstakes.find(s => s.id === activeSweepstake.id);
-      if (updatedSweepstake) {
-        setActiveSweepstake(updatedSweepstake);
+      const updatedActiveSweepstake = sweepstakes.find(s => s.id === activeSweepstake.id);
+      if (updatedActiveSweepstake) {
+        setActiveSweepstake(updatedActiveSweepstake);
       }
     }
   }, [sweepstakes]);
+
+  // Save horses to localStorage when they change
+  useEffect(() => {
+    saveToLocalStorage('horses', horses);
+  }, [horses]);
 
   // New sweepstake form state
   const [newSweepstake, setNewSweepstake] = useState<Omit<Sweepstake, 'id' | 'status' | 'participants' | 'assignments' | 'winners' | 'createdAt' | 'horses'>>({
@@ -90,7 +130,8 @@ const SweepstakeManager: React.FC = () => {
       createdAt: new Date().toISOString(),
       horses: [...horses]
     };
-    setSweepstakes([...sweepstakes, newSweepstakeEntry]);
+    const updatedSweepstakes = [...sweepstakes, newSweepstakeEntry];
+    setSweepstakes(updatedSweepstakes);
     setView('list');
     resetNewSweepstakeForm();
   };
@@ -407,8 +448,8 @@ const SweepstakeManager: React.FC = () => {
                   </Button>
                 </div>
               </div>
-        </CardContent>
-      </Card>
+            </CardContent>
+          </Card>
         ))}
       </div>
     </div>
@@ -426,10 +467,10 @@ const SweepstakeManager: React.FC = () => {
           </Button>
         </div>
 
-      <Card>
-        <CardHeader>
+        <Card>
+          <CardHeader>
             <CardTitle>{activeSweepstake.name}</CardTitle>
-        </CardHeader>
+          </CardHeader>
           <CardContent className="space-y-6">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="p-4 bg-gray-50 rounded">
@@ -497,7 +538,7 @@ const SweepstakeManager: React.FC = () => {
                         {participant.hasPaid ? "Paid" : "Unpaid"}
                       </span>
                     </div>
-            ))}
+                  ))}
                 </div>
               </div>
             )}
@@ -519,7 +560,7 @@ const SweepstakeManager: React.FC = () => {
                 >
                   <Trophy className="mr-2 h-4 w-4" />
                   Complete Race
-          </Button>
+                </Button>
               </div>
             )}
 
@@ -543,9 +584,9 @@ const SweepstakeManager: React.FC = () => {
               </div>
             )}
           </CardContent>
-      </Card>
-    </div>
-  );
+        </Card>
+      </div>
+    );
   };
 
   return (
