@@ -255,7 +255,7 @@ const SweepstakeManager: React.FC = () => {
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Sweepstake Name
             </label>
-            <Input
+          <Input
               placeholder="Enter sweepstake name"
               value={newSweepstake.name}
               onChange={(e: ChangeEvent<HTMLInputElement>) => 
@@ -407,8 +407,8 @@ const SweepstakeManager: React.FC = () => {
                   </Button>
                 </div>
               </div>
-            </CardContent>
-          </Card>
+        </CardContent>
+      </Card>
         ))}
       </div>
     </div>
@@ -426,10 +426,10 @@ const SweepstakeManager: React.FC = () => {
           </Button>
         </div>
 
-        <Card>
-          <CardHeader>
+      <Card>
+        <CardHeader>
             <CardTitle>{activeSweepstake.name}</CardTitle>
-          </CardHeader>
+        </CardHeader>
           <CardContent className="space-y-6">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="p-4 bg-gray-50 rounded">
@@ -497,7 +497,7 @@ const SweepstakeManager: React.FC = () => {
                         {participant.hasPaid ? "Paid" : "Unpaid"}
                       </span>
                     </div>
-                  ))}
+            ))}
                 </div>
               </div>
             )}
@@ -519,7 +519,7 @@ const SweepstakeManager: React.FC = () => {
                 >
                   <Trophy className="mr-2 h-4 w-4" />
                   Complete Race
-                </Button>
+          </Button>
               </div>
             )}
 
@@ -543,9 +543,9 @@ const SweepstakeManager: React.FC = () => {
               </div>
             )}
           </CardContent>
-        </Card>
-      </div>
-    );
+      </Card>
+    </div>
+  );
   };
 
   return (
