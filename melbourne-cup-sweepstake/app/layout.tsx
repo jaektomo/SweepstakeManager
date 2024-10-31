@@ -16,7 +16,19 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={inter.className}>{children}</body>
+      <body className={inter.className}>
+        {children}
+        <div className="fixed bottom-0 left-0 right-0 p-4 bg-white border-t border-gray-200 text-center">
+          <a 
+            href="https://buymeacoffee.com/jaek" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="inline-flex items-center px-4 py-2 bg-yellow-400 hover:bg-yellow-500 text-black rounded-lg transition-colors duration-200"
+          >
+            ☕️ If you find this useful, consider buying me a coffee
+          </a>
+        </div>
+      </body>
     </html>
   )
 }

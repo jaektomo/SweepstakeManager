@@ -39,6 +39,16 @@ interface Sweepstake {
   horses: string[];
 }
 
+// Fisher-Yates (Knuth) shuffle algorithm
+const shuffleArray = <T,>(array: T[]): T[] => {
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+};
+
 const SweepstakeManager: React.FC = () => {
   // Main application state
   const [view, setView] = useState<'list' | 'create' | 'detail' | 'horses'>('list');
@@ -61,7 +71,7 @@ const SweepstakeManager: React.FC = () => {
   // New sweepstake form state
   const [newSweepstake, setNewSweepstake] = useState<Omit<Sweepstake, 'id' | 'status' | 'participants' | 'assignments' | 'winners' | 'createdAt' | 'horses'>>({
     name: '',
-    buyIn: 0,
+    buyIn: 1,
     prizeDistribution: [{ place: 1, percentage: 60 }]
   });
 
@@ -135,14 +145,12 @@ const SweepstakeManager: React.FC = () => {
     }
   };
 
-  // Horse assignment
+  // Horse assignment using Fisher-Yates shuffle
   const assignHorses = (sweepstakeId: string) => {
     const sweep = sweepstakes.find(s => s.id === sweepstakeId);
     if (!sweep || sweep.horses.length < sweep.participants.length) return;
 
-    const shuffledHorses = [...sweep.horses]
-      .sort(() => Math.random() - 0.5)
-      .slice(0, sweep.participants.length);
+    const shuffledHorses = shuffleArray(sweep.horses).slice(0, sweep.participants.length);
     
     const assignments = sweep.participants.map((participant, index) => ({
       participant: participant.name,
@@ -156,13 +164,12 @@ const SweepstakeManager: React.FC = () => {
     ));
   };
 
-  // Complete race
+  // Complete race using Fisher-Yates shuffle for fair randomization
   const completeRace = (sweepstakeId: string) => {
     const sweep = sweepstakes.find(s => s.id === sweepstakeId);
     if (!sweep) return;
 
-    const raceResults = sweep.assignments
-      .sort(() => Math.random() - 0.5)
+    const raceResults = shuffleArray(sweep.assignments)
       .slice(0, sweep.prizeDistribution.length)
       .map((assignment, index) => ({
         ...assignment,
@@ -200,21 +207,28 @@ const SweepstakeManager: React.FC = () => {
           <CardTitle>Horse Management</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex gap-2">
+          <div className="flex flex-col sm:flex-row gap-2">
             <Input
               value={newHorse}
               onChange={(e) => setNewHorse(e.target.value)}
               placeholder="Enter horse name..."
               onKeyPress={(e) => e.key === 'Enter' && addHorse()}
+              className="flex-1"
             />
-            <Button onClick={addHorse}>Add Horse</Button>
+            <Button onClick={addHorse} className="w-full sm:w-auto">Add Horse</Button>
           </div>
 
           <div className="grid gap-2">
             {horses.map((horse, index) => (
               <div key={index} className="flex justify-between items-center p-2 bg-gray-50 rounded">
                 <span>{horse}</span>
-                <Button variant="ghost" onClick={() => removeHorse(index)}>Remove</Button>
+                <Button 
+                  variant="ghost" 
+                  onClick={() => removeHorse(index)}
+                  className="text-red-500 hover:text-red-700"
+                >
+                  Remove
+                </Button>
               </div>
             ))}
           </div>
@@ -255,7 +269,7 @@ const SweepstakeManager: React.FC = () => {
             </label>
             <Input
               type="number"
-              min="0"
+              min="1"
               step="0.01"
               placeholder="Enter buy-in amount"
               value={newSweepstake.buyIn}
@@ -270,7 +284,7 @@ const SweepstakeManager: React.FC = () => {
             </label>
             <div className="grid gap-2">
               {newSweepstake.prizeDistribution.map((prize, index) => (
-                <div key={index} className="flex gap-2 items-center">
+                <div key={index} className="flex flex-col sm:flex-row gap-2 items-start sm:items-center">
                   <Input
                     type="number"
                     min="0"
@@ -288,6 +302,7 @@ const SweepstakeManager: React.FC = () => {
                         prizeDistribution: newDistribution
                       });
                     }}
+                    className="w-full sm:w-32"
                   />
                   <span className="text-sm text-gray-500">% for {index + 1}st place</span>
                 </div>
@@ -308,6 +323,7 @@ const SweepstakeManager: React.FC = () => {
                       ]
                     });
                   }}
+                  className="w-full sm:w-auto"
                 >
                   <Plus className="mr-2 h-4 w-4" />
                   Add Prize Place
@@ -320,6 +336,7 @@ const SweepstakeManager: React.FC = () => {
             <Button
               onClick={createSweepstake}
               disabled={!newSweepstake.name || newSweepstake.buyIn <= 0 || horses.length === 0}
+              className="w-full sm:w-auto"
             >
               Create Sweepstake
             </Button>
@@ -331,13 +348,13 @@ const SweepstakeManager: React.FC = () => {
 
   const renderDashboard = () => (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <h1 className="text-2xl font-bold">Melbourne Cup Sweepstakes</h1>
-        <div className="flex gap-2">
-          <Button onClick={() => setView('horses')} variant="outline">
+        <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+          <Button onClick={() => setView('horses')} variant="outline" className="w-full sm:w-auto">
             Manage Horses
           </Button>
-          <Button onClick={() => setView('create')}>
+          <Button onClick={() => setView('create')} className="w-full sm:w-auto">
             <Plus className="mr-2" /> New Sweepstake
           </Button>
         </div>
@@ -357,7 +374,7 @@ const SweepstakeManager: React.FC = () => {
         {filteredSweepstakes.map(sweep => (
           <Card key={sweep.id} className="hover:shadow-md transition-shadow">
             <CardContent className="p-4">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
                   <h3 className="font-semibold text-lg">{sweep.name}</h3>
                   <div className="text-sm text-gray-500 space-x-2">
@@ -368,11 +385,12 @@ const SweepstakeManager: React.FC = () => {
                     <span className="capitalize">{sweep.status}</span>
                   </div>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
                   {sweep.status === 'active' && (
                     <Button 
                       variant="outline"
                       onClick={() => completeRace(sweep.id)}
+                      className="w-full sm:w-auto"
                     >
                       <Trophy className="mr-2 h-4 w-4" />
                       Complete Race
@@ -383,6 +401,7 @@ const SweepstakeManager: React.FC = () => {
                       setActiveSweepstake(sweep);
                       setView('detail');
                     }}
+                    className="w-full sm:w-auto"
                   >
                     Manage
                   </Button>
@@ -412,7 +431,7 @@ const SweepstakeManager: React.FC = () => {
             <CardTitle>{activeSweepstake.name}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="p-4 bg-gray-50 rounded">
                 <div className="text-sm text-gray-500">Buy-in</div>
                 <div className="text-lg font-semibold">${activeSweepstake.buyIn}</div>
@@ -432,8 +451,8 @@ const SweepstakeManager: React.FC = () => {
             {activeSweepstake.status === 'setup' && (
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold">Participants</h3>
-                <div className="flex gap-2">
-                  <div className="flex-1 flex gap-2">
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <div className="flex-1 flex flex-col sm:flex-row gap-2">
                     <Input
                       ref={participantInputRef}
                       placeholder="Add participant..."
@@ -442,10 +461,12 @@ const SweepstakeManager: React.FC = () => {
                           handleAddParticipant(activeSweepstake.id);
                         }
                       }}
+                      className="flex-1"
                     />
                     <Button 
                       variant="outline"
                       onClick={() => handleAddParticipant(activeSweepstake.id)}
+                      className="w-full sm:w-auto"
                     >
                       <UserPlus className="h-4 w-4" />
                       <span className="ml-2">Add</span>
@@ -454,6 +475,7 @@ const SweepstakeManager: React.FC = () => {
                   <Button 
                     onClick={() => assignHorses(activeSweepstake.id)}
                     disabled={activeSweepstake.participants.length === 0 || activeSweepstake.participants.length > activeSweepstake.horses.length}
+                    className="w-full sm:w-auto"
                   >
                     <ShuffleIcon className="mr-2 h-4 w-4" />
                     Assign Horses
@@ -485,13 +507,16 @@ const SweepstakeManager: React.FC = () => {
                 <h3 className="text-lg font-semibold">Horse Assignments</h3>
                 <div className="grid gap-2">
                   {activeSweepstake.assignments.map((assignment, index) => (
-                    <div key={index} className="flex justify-between items-center p-2 bg-gray-50 rounded">
+                    <div key={index} className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-2 bg-gray-50 rounded">
                       <span>{assignment.participant}</span>
-                      <span className="font-medium">{assignment.horse}</span>
+                      <span className="font-medium mt-1 sm:mt-0">{assignment.horse}</span>
                     </div>
                   ))}
                 </div>
-                <Button onClick={() => completeRace(activeSweepstake.id)}>
+                <Button 
+                  onClick={() => completeRace(activeSweepstake.id)}
+                  className="w-full sm:w-auto"
+                >
                   <Trophy className="mr-2 h-4 w-4" />
                   Complete Race
                 </Button>
@@ -503,13 +528,13 @@ const SweepstakeManager: React.FC = () => {
                 <h3 className="text-lg font-semibold">Results</h3>
                 <div className="grid gap-2">
                   {activeSweepstake.winners.map((winner, index) => (
-                    <div key={index} className="flex justify-between items-center p-2 bg-gray-50 rounded">
+                    <div key={index} className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-2 bg-gray-50 rounded">
                       <div>
                         <span className="font-medium">{winner.place}st Place: </span>
                         <span>{winner.participant}</span>
                         <span className="ml-2 text-gray-500">({winner.horse})</span>
                       </div>
-                      <span className="font-bold text-green-600">
+                      <span className="font-bold text-green-600 mt-2 sm:mt-0">
                         ${winner.winnings.toFixed(2)}
                       </span>
                     </div>
@@ -524,7 +549,7 @@ const SweepstakeManager: React.FC = () => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
+    <div className="max-w-4xl mx-auto p-4 sm:p-6">
       {view === 'list' && renderDashboard()}
       {view === 'create' && renderCreateForm()}
       {view === 'detail' && renderSweepstakeDetail()}
