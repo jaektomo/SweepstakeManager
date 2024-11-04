@@ -4,7 +4,7 @@ import React, { useState, KeyboardEvent, ChangeEvent, useRef, useEffect } from '
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
-import { Plus, ShuffleIcon, Trophy, ChevronLeft, Search, UserPlus } from 'lucide-react';
+import { Plus, ShuffleIcon, Trophy, ChevronLeft, Search, UserPlus, Download } from 'lucide-react';
 
 interface PrizeDistribution {
   place: number;
@@ -547,7 +547,17 @@ const SweepstakeManager: React.FC = () => {
 
             {activeSweepstake.status === 'active' && (
               <div className="space-y-4">
-                <h3 className="text-lg font-semibold">Horse Assignments</h3>
+                <div className="flex justify-between items-center">
+                  <h3 className="text-lg font-semibold">Horse Assignments</h3>
+                  <Button 
+                    variant="outline"
+                    onClick={() => downloadPDF(activeSweepstake)}
+                    className="w-auto"
+                  >
+                    <Download className="mr-2 h-4 w-4" />
+                    Download PDF
+                  </Button>
+                </div>
                 <div className="grid gap-2">
                   {activeSweepstake.assignments.map((assignment, index) => (
                     <div key={index} className="flex flex-col sm:flex-row justify-between items-start sm:items-center p-2 bg-gray-50 rounded">
@@ -589,6 +599,68 @@ const SweepstakeManager: React.FC = () => {
         </Card>
       </div>
     );
+  };
+
+  const downloadPDF = async (sweepstake: Sweepstake) => {
+    try {
+      const { jsPDF } = await import('jspdf');
+      const doc = new jsPDF();
+      
+      // Header section
+      doc.setFontSize(20);
+      doc.text(sweepstake.name, 105, 15, { align: 'center' });
+      
+      doc.setFontSize(12);
+      doc.text(`Buy-in: $${sweepstake.buyIn}`, 20, 25);
+      doc.text(`Total Pool: $${sweepstake.buyIn * sweepstake.participants.length}`, 20, 30);
+      
+      // Draw line under header
+      doc.line(20, 35, 190, 35);
+      
+      // Ticket dimensions and spacing
+      const ticketWidth = 85;
+      const ticketHeight = 40;
+      const startY = 45;
+      const spacing = 5;
+      
+      // Calculate positions for two columns
+      const leftColX = 15;
+      const rightColX = 110;
+      
+      sweepstake.assignments.forEach((assignment, index) => {
+        const isRightColumn = index % 2 === 1;
+        const currentX = isRightColumn ? rightColX : leftColX;
+        const currentY = startY + Math.floor(index / 2) * (ticketHeight + spacing);
+        
+        // Start new page if needed
+        if (currentY + ticketHeight > 280) {
+          doc.addPage();
+          doc.setFontSize(20);
+          doc.text(sweepstake.name, 105, 15, { align: 'center' });
+          doc.line(20, 35, 190, 35);
+        }
+        
+        // Draw ticket box
+        doc.rect(currentX, currentY, ticketWidth, ticketHeight);
+        
+        // Add dotted line for cutting
+        doc.setLineDashPattern([1, 1], 0);
+        doc.line(currentX, currentY, currentX + ticketWidth, currentY);
+        doc.setLineDashPattern([], 0);
+        
+        // Ticket content
+        doc.setFontSize(12);
+        doc.text('Melbourne Cup Sweepstake', currentX + ticketWidth/2, currentY + 10, { align: 'center' });
+        doc.setFontSize(10);
+        doc.text(`Participant: ${assignment.participant}`, currentX + 5, currentY + 22);
+        doc.text(`Horse: ${assignment.horse}`, currentX + 5, currentY + 32);
+      });
+      
+      // Save the PDF
+      doc.save(`${sweepstake.name.replace(/\s+/g, '_')}_tickets.pdf`);
+    } catch (error) {
+      console.error('Error generating PDF:', error);
+    }
   };
 
   return (
