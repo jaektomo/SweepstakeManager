@@ -39,7 +39,7 @@ https://sweepstake-manager.vercel.app/
 1. **Installation**
 ```bash
 git clone https://github.com/jaektomo/SweepstakeManager.git
-cd melbourne-cup-sweepstake
+cd SweepstakeManager/melbourne-cup-sweepstake/
 npm install
 ```
 
